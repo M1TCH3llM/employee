@@ -16,6 +16,7 @@ function dbQuery(view) {
 
   db.query(`SELECT * FROM ${view}`, function (err, results) {
     console.table(results);
+    interface();
   });
 }
 //TODO function to add department
@@ -24,6 +25,8 @@ function depAdd(eDepAdd) {
   // let depName = `${eDepAdd}`;
   if (eDepAdd !== 0) {
     db.query(`INSERT INTO department (name) VALUES ("${eDepAdd}");`);
+    console.log("Department Successfully ADDED");
+    interface();
   }
 }
 // // TODO function to add role
@@ -31,23 +34,23 @@ function depAdd(eDepAdd) {
 function roleAdd(answers) {
   const { eRoleAddName, eRoleAddSalary, eRoleAddDep } = answers;
 
-  // let roleName = `${eRoleAddName}`;
-  // let roleSalary = `${eRoleAddSalary}`;
-  // let depID = `${eRoleAddDep}`;
-
   db.query(
     `INSERT INTO role_info (title, salary, department_id) VALUES ("${eRoleAddName}", "${eRoleAddSalary}", "${eRoleAddDep}");`
   );
+  interface();
 }
 // // TODO function to inport values to add employee
 
 function addEmp(answers) {
-  const { first_name, last_name, manager, role_id } = answers;
-
+  const { first_name, last_name, manager, role_id, manager_id } = answers;
+  console.log(first_name, last_name, manager, role_id, manager_id);
   db.query(
-    `INSERT INTO employee (first_name, last_name, manager, role_id) VALUES ("${first_name}", "${last_name}", ${manager}, ${role_id});`
+    `INSERT INTO employee (first_name, last_name, manager, role_id, manager_id) VALUES ("${first_name}", "${last_name}", ${manager}, ${role_id}, ${manager_id});`
   );
+  console.log("Employee Successfully ADDED");
+  interface();
 }
+
 //function to que this query for View Roles
 
 function viewRole() {
@@ -55,17 +58,79 @@ function viewRole() {
     "SELECT * FROM role_info JOIN department ON role_info.department_id = department.id",
     function (err, results) {
       console.table(results);
+      interface();
     }
   );
 }
 
-// db.query("SELECT * FROM role_info JOIN department ON role_info.department_id = department.id", function (err, results) {
-//     console.table(results);
-// });
-
 function viewEmp() {
-  db.query; // JUSTIN MUST HELP HERE
+  console.log("hey is me");
+  db.query(
+    `SELECT emp.id, emp.first_name, emp.Last_name, ri.title, dep.name AS department, ri.salary, emp2.first_name AS manager
+ FROM employee AS emp
+ INNER JOIN role_info AS ri ON emp.role_id = ri.id
+ INNER JOIN department AS dep ON ri.department_id = dep.id
+ LEFT JOIN employee AS emp2 ON emp2.manager_id = emp.id`,
+    function (err, results) {
+      console.table(results);
+      interface();
+    }
+  );
 }
+
+function getRolesFromDatabase() {
+  return new Promise((resolve, reject) => {
+    db.query("SELECT id AS value, title FROM role_info", (err, results) => {
+      const roles = results.map((row) => {
+        return {
+          value: row.value, // This assumes that the database query returns 'value' and 'title' fields
+          name: row.title,
+        };
+      });
+      resolve(roles);
+    });
+  });
+}
+
+function getDepartmentsFromDatabase() {
+  return new Promise((resolve, reject) => {
+    db.query("SELECT id AS value, name FROM department", (err, results) => {
+      if (err) {
+        reject(err);
+      } else {
+        const roles = results.map((row) => {
+          return {
+            value: row.value, // This assumes that the database query returns 'value' and 'title' fields
+            name: row.name,
+          };
+        });
+        resolve(roles);
+      }
+    });
+  });
+}
+
+function getManagersFromDatabase() {
+  return new Promise((resolve, reject) => {
+    db.query(
+      "SELECT id AS value, first_name FROM employee Where manager = 1",
+      (err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          const roles = results.map((row) => {
+            return {
+              value: row.value, // This assumes that the database query returns 'value' and 'title' fields
+              name: row.first_name,
+            };
+          });
+          resolve(roles);
+        }
+      }
+    );
+  });
+}
+
 const menuQ = [
   {
     name: "menu",
@@ -121,8 +186,17 @@ const menuQ = [
   },
   {
     name: "eRoleAddDep",
-    type: "input",
+    type: "list",
     message: "Enter department id for the role",
+    choices: async function () {
+      try {
+        const department = await getDepartmentsFromDatabase();
+        return department;
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+        return [];
+      }
+    },
     when: (answer) => answer.eRole === "Add Role",
   },
   {
@@ -146,16 +220,39 @@ const menuQ = [
   },
   {
     name: "role_id",
-    type: "input",
-    message: "role id?",
+    type: "list",
+    message: "Select a role:",
+    choices: async function () {
+      try {
+        const roles = await getRolesFromDatabase();
+        return roles;
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+        return [];
+      }
+    },
     when: (answer) => answer.editIndex === "Employees",
   },
   {
     name: "manager",
-    type: "list",
+    type: "confirm",
     message: "are they a manager?",
-    choices: ["true", "false"],
     when: (answer) => answer.editIndex === "Employees",
+  },
+  {
+    name: "manager_id",
+    type: "list",
+    message: "Who is their manager?",
+    choices: async function () {
+      try {
+        const managers = await getManagersFromDatabase();
+        return managers;
+      } catch (error) {
+        console.error("Error fetching managers:", error);
+        return [];
+      }
+    },
+    when: (answer) => answer.manager === false,
   },
 ];
 
@@ -173,6 +270,7 @@ function interface() {
       last_name,
       role_id,
       manager,
+      manager_id,
     } = answers;
     console.log(
       menu,
@@ -183,14 +281,15 @@ function interface() {
       first_name,
       last_name,
       role_id,
-      manager
+      manager,
+      manager_id
     );
 
     if (view === "department") {
       dbQuery(view);
     } else if (view === "role_info") {
       viewRole();
-    } else if (view === "employees") {
+    } else if (view === "employee") {
       viewEmp();
     }
 

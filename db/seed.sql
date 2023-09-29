@@ -1,3 +1,5 @@
+USE employee_db;
+
 INSERT INTO department (name,) VALUES
     ('Sales'),
     ('Engineering'),
@@ -18,14 +20,14 @@ INSERT INTO role_info (title, salary, department_id) VALUES
     ('Intern', 10, 5),
     ('Janitor', 200000, 6);
 
-INSERT INTO employee (first_name, last_name, manager, role_id) VALUES
-('Beth', 'Betherson', true, 1),
-('Ben', 'Franklin', false, 1),
-('George', 'Lucis', false, 2),
-('Martha', 'Sewart', true, 2),
-('Justin',' Moore', false, 3),
-('Maya', 'TheDog', True, 3),
-('George', 'Washington', True, 4),
-('Steve', 'Martin', False, 4),
-('Patirk', 'Star', True, 5),
-('Cat', 'Dog', false, 6),
+INSERT INTO employee (first_name, last_name, manager, role_id, manager_id) VALUES
+('Beth', 'Betherson', true, 1, null),
+('Patirk', 'Star', true, 5, null),
+('Martha', 'Sewart', true, 2, null),
+('Maya', 'TheDog', true, 3, null),
+('George', 'Washington', true, 4, null),
+('Ben', 'Franklin', false, 1, 1),
+('George', 'Lucis', false, 2, 3),
+('Justin',' Moore', false, 3, 4),
+('Steve', 'Martin', False, 4, 5),
+('Cat', 'Dog', false, 6, 5);
