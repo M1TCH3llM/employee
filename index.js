@@ -66,11 +66,11 @@ function viewRole() {
 function viewEmp() {
   console.log("hey is me");
   db.query(
-    `SELECT emp.id, emp.first_name, emp.Last_name, ri.title, dep.name AS department, ri.salary, emp2.first_name AS manager
- FROM employee AS emp
- INNER JOIN role_info AS ri ON emp.role_id = ri.id
- INNER JOIN department AS dep ON ri.department_id = dep.id
- LEFT JOIN employee AS emp2 ON emp2.manager_id = emp.id`,
+    `SELECT emp.id, emp.first_name, emp.Last_name, ri.title, dep.name AS department, ri.salary, emp.manager_id, emp2.first_name AS manager
+    FROM employee AS emp
+    INNER JOIN role_info AS ri ON emp.role_id = ri.id
+    INNER JOIN department AS dep ON ri.department_id = dep.id
+    LEFT JOIN employee AS emp2 ON emp2.id = emp.manager_id `,
     function (err, results) {
       console.table(results);
       interface();
