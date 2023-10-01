@@ -11,14 +11,6 @@ const db = mysql.createConnection(
   console.log("Connected to the employee_db.")
 );
 
-function dbQuery(view) {
-  let dbQuery = `${view}`;
-
-  db.query(`SELECT * FROM ${view}`, function (err, results) {
-    console.table(results);
-    interface();
-  });
-}
 //TODO function to add department
 
 function depAdd(eDepAdd) {
@@ -33,26 +25,55 @@ function depAdd(eDepAdd) {
 
 function roleAdd(answers) {
   const { eRoleAddName, eRoleAddSalary, eRoleAddDep } = answers;
-
   db.query(
     `INSERT INTO role_info (title, salary, department_id) VALUES ("${eRoleAddName}", "${eRoleAddSalary}", "${eRoleAddDep}");`
   );
+  console.log("Role Successfully ADDED");
   interface();
 }
 // // TODO function to inport values to add employee
 
 function addEmp(answers) {
-  const { first_name, last_name, manager, role_id, manager_id } = answers;
-  console.log(first_name, last_name, manager, role_id, manager_id);
+  const { first_name, last_name, manager, role_id } = answers;
+
+  // Insert the new employee without specifying manager_id
   db.query(
-    `INSERT INTO employee (first_name, last_name, manager, role_id, manager_id) VALUES ("${first_name}", "${last_name}", ${manager}, ${role_id}, ${manager_id});`
+    `INSERT INTO employee (first_name, last_name, manager, role_id) VALUES ("${first_name}", "${last_name}", ${manager}, ${role_id});`,
+    (error, results) => {
+      if (error) {
+        console.error("Error adding employee:", error);
+        interface();
+      } else {
+        // Get the auto-generated employee_id of the newly inserted employee
+        const employeeId = results.insertId;
+
+        // Update the manager_id to be equal to employee_id
+        db.query(
+          `UPDATE employee SET manager_id = ${employeeId} WHERE id = ${employeeId};`,
+          (updateError, updateResults) => {
+            if (updateError) {
+              console.error("Error updating manager_id:", updateError);
+            } else {
+              console.log("Employee Successfully ADDED");
+            }
+            interface();
+          }
+        );
+      }
+    }
   );
-  console.log("Employee Successfully ADDED");
-  interface();
+}
+
+function dbQuery(view) {
+  let dbQuery = `${view}`;
+
+  db.query(`SELECT * FROM ${view}`, function (err, results) {
+    console.table(results);
+    interface();
+  });
 }
 
 //function to que this query for View Roles
-
 function viewRole() {
   db.query(
     "SELECT * FROM role_info JOIN department ON role_info.department_id = department.id",
@@ -64,7 +85,6 @@ function viewRole() {
 }
 
 function viewEmp() {
-  console.log("hey is me");
   db.query(
     `SELECT emp.id, emp.first_name, emp.Last_name, ri.title, dep.name AS department, ri.salary, emp.manager_id, emp2.first_name AS manager
     FROM employee AS emp
@@ -272,18 +292,18 @@ function interface() {
       manager,
       manager_id,
     } = answers;
-    console.log(
-      menu,
-      view,
-      eDepAdd,
-      eRoleAddName,
-      eEmployees,
-      first_name,
-      last_name,
-      role_id,
-      manager,
-      manager_id
-    );
+    // console.log(
+    //   menu,
+    //   view,
+    //   eDepAdd,
+    //   eRoleAddName,
+    //   eEmployees,
+    //   first_name,
+    //   last_name,
+    //   role_id,
+    //   manager,
+    //   manager_id
+    // );
 
     if (view === "department") {
       dbQuery(view);
